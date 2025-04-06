@@ -1,39 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { mockData } from "../data/mockData";
+import { useRouter } from "next/navigation";
+import { mockData, employerTypes, levelTypes } from "../data/mockData";
 import SalaryCard from "../components/SalaryCard";
 import WorkLifeBalanceBar from "../components/WorkLifeBalanceBar";
 import Sidebar from "../components/Sidebar";
 import JobPostings from "../components/JobPostings";
 
 export default function App() {
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Get unique employer types and levels
-  const employerTypes = [...new Set(mockData.map((item) => item.employerType))];
-  const levels = [...new Set(mockData.map((item) => item.level))];
-
   // Calculate average work-life balance score for each employer type
-  const getAverageScore = (employerType) => {
+  const getAverageScore = (employerTypeId) => {
     const scores = mockData
-      .filter((item) => item.employerType === employerType)
+      .filter((item) => item.employerTypeId === employerTypeId)
       .map((item) => item.workLifeBalanceScore);
     return scores.reduce((a, b) => a + b, 0) / scores.length;
   };
 
-  // Get data for a specific employer type and level
-  const getData = (employerType, level) => {
-    return mockData.find(
-      (item) => item.employerType === employerType && item.level === level
-    );
-  };
-
   // Get average salary for a specific employer type and level
-  const getAverageSalary = (employerType, level) => {
+  const getAverageSalary = (employerTypeId, levelId) => {
     const salaries = mockData
       .filter(
-        (item) => item.employerType === employerType && item.level === level
+        (item) =>
+          item.employerTypeId === employerTypeId && item.levelId === levelId
       )
       .map((item) => item.salary);
     return salaries.length > 0
@@ -76,25 +68,34 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {employerTypes.map((employerType) => (
-            <div key={employerType} className="bg-white p-6 rounded-lg shadow">
+            <div
+              key={employerType.id}
+              className="bg-white p-6 rounded-lg shadow"
+            >
               <h2 className="text-2xl font-bold mb-4 text-indigo-800 pb-2 border-b border-indigo-200">
-                {employerType}
+                {employerType.name}
               </h2>
-              <WorkLifeBalanceBar score={getAverageScore(employerType)} />
+              <WorkLifeBalanceBar score={getAverageScore(employerType.id)} />
               <div className="space-y-4">
-                {levels.map((level) => {
-                  const avgSalary = getAverageSalary(employerType, level);
+                {levelTypes.map((level) => {
+                  const avgSalary = getAverageSalary(employerType.id, level.id);
                   return (
                     avgSalary > 0 && (
                       <SalaryCard
-                        key={level}
-                        level={level}
+                        key={level.id}
+                        level={level.name}
                         salary={avgSalary}
                       />
                     )
                   );
                 })}
               </div>
+              <button
+                onClick={() => router.push(`/employer/${employerType.id}`)}
+                className="mt-4 w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700"
+              >
+                View All Data
+              </button>
             </div>
           ))}
         </div>
