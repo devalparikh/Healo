@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { mockData, employerTypes, levelTypes } from "../data/mockData";
+import {
+  mockData,
+  healthcareGroups,
+  employerTypesByGroup,
+  levelTypesByGroup,
+} from "../data/mockData";
 import SalaryCard from "../components/SalaryCard";
 import WorkLifeBalanceBar from "../components/WorkLifeBalanceBar";
 import Sidebar from "../components/Sidebar";
@@ -11,13 +16,24 @@ import JobPostings from "../components/JobPostings";
 export default function App() {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(healthcareGroups[0].id);
+
+  // Get current employer types based on selected group
+  const currentEmployerTypes = employerTypesByGroup[selectedGroup] || [];
+  const currentLevelTypes = levelTypesByGroup[selectedGroup] || [];
 
   // Calculate average work-life balance score for each employer type
   const getAverageScore = (employerTypeId) => {
     const scores = mockData
-      .filter((item) => item.employerTypeId === employerTypeId)
+      .filter(
+        (item) =>
+          item.groupId === selectedGroup &&
+          item.employerTypeId === employerTypeId
+      )
       .map((item) => item.workLifeBalanceScore);
-    return scores.reduce((a, b) => a + b, 0) / scores.length;
+    return scores.length > 0
+      ? scores.reduce((a, b) => a + b, 0) / scores.length
+      : 0;
   };
 
   // Get average salary for a specific employer type and level
@@ -25,7 +41,9 @@ export default function App() {
     const salaries = mockData
       .filter(
         (item) =>
-          item.employerTypeId === employerTypeId && item.levelId === levelId
+          item.groupId === selectedGroup &&
+          item.employerTypeId === employerTypeId &&
+          item.levelId === levelId
       )
       .map((item) => item.salary);
     return salaries.length > 0
@@ -66,8 +84,22 @@ export default function App() {
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <select
+            value={selectedGroup}
+            onChange={(e) => setSelectedGroup(e.target.value)}
+            className="block w-full max-w-xs px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            {healthcareGroups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {employerTypes.map((employerType) => (
+          {currentEmployerTypes.map((employerType) => (
             <div
               key={employerType.id}
               className="bg-white p-6 rounded-lg shadow"
@@ -77,7 +109,7 @@ export default function App() {
               </h2>
               <WorkLifeBalanceBar score={getAverageScore(employerType.id)} />
               <div className="space-y-4">
-                {levelTypes.map((level) => {
+                {currentLevelTypes.map((level) => {
                   const avgSalary = getAverageSalary(employerType.id, level.id);
                   return (
                     avgSalary > 0 && (
@@ -91,7 +123,9 @@ export default function App() {
                 })}
               </div>
               <button
-                onClick={() => router.push(`/employer/${employerType.id}`)}
+                onClick={() =>
+                  router.push(`/employer/${selectedGroup}/${employerType.id}`)
+                }
                 className="mt-4 w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700"
               >
                 View All Data
@@ -100,7 +134,7 @@ export default function App() {
           ))}
         </div>
 
-        <JobPostings />
+        <JobPostings groupId={selectedGroup} />
       </main>
     </div>
   );
