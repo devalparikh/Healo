@@ -74,6 +74,13 @@ export const mockData = [
     salary: 180000,
     workLifeBalanceScore: 8,
   },
+  {
+    id: "job-9",
+    employerTypeId: "et-1",
+    levelId: "l-3",
+    salary: 880000,
+    workLifeBalanceScore: 2,
+  },
 ];
 
 export const jobPostings = [
