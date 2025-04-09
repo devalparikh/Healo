@@ -2,6 +2,7 @@ using Healo.Configuration.Options;
 using Healo.Repository;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using Healo.Data;
 
 namespace Healo.Configuration.Extensions;
 
@@ -14,7 +15,7 @@ public static class DatabaseExtension
         var connectionString = Environment.GetEnvironmentVariable("MONGODB_URI");
         if (connectionString == null)
         {
-            Console.WriteLine("You must set your 'MONGODB_URI' environment variable. To learn how to set it, see https://www.mongodb.com/docs/drivers/csharp/current/quick-start/#set-your-connection-string");
+            Console.WriteLine("You must set your 'MONGODB_URI' environment variable.");
             Environment.Exit(0);
         }
 
@@ -24,7 +25,7 @@ public static class DatabaseExtension
         {
             throw new InvalidOperationException("Database configuration is missing");
         }
-        
+
         services.AddOptions<DatabasesOptions>()
             .Configure(options =>
             {
@@ -54,6 +55,9 @@ public static class DatabaseExtension
             var database = sp.GetRequiredService<IMongoDatabase>();
             return EntryDbContext.Create(database);
         });
+
+        // Add DataSeeder as a scoped service
+        services.AddScoped<DataSeeder>();
 
         return services;
     }

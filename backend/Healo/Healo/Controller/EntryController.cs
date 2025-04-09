@@ -39,7 +39,9 @@ public class EntryController : CustomControllerBase
     {
         var result = await _entryService.GetAllEntriesAsync();
         if (result.IsError) return Failure(result);
-        return Ok(result.Value.Select(_entryMapper.ToResponse));
+
+        var responses = await _entryMapper.ToResponses(result.Value);
+        return Ok(responses);
     }
 
     [HttpPut("{id:guid}")]

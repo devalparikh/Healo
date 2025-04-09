@@ -1,3 +1,4 @@
+using Healo.Configuration;
 using Healo.Configuration.Extensions;
 using Healo.Models;
 using Healo.Repository;
@@ -6,8 +7,8 @@ using Healo.Service;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
+// Add logging first
+builder.Services.AddLogging();
 
 // Add configuration sources
 builder.Configuration
@@ -16,8 +17,13 @@ builder.Configuration
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
 
-// Database
+// Add services
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+// Database setup
 builder.Services.AddMongoDbConfiguration(config);
+builder.Services.AddHostedService<DatabaseInitializer>();
 
 // Services
 builder.Services.AddScoped<EntryService>();
@@ -29,5 +35,8 @@ builder.Services.AddScoped<IEntryRepository, EntryRepository>();
 builder.Services.AddSingleton<EntryMapper>();
 
 var app = builder.Build();
+
+// Configure middleware
 app.MapControllers();
-app.Run();
+
+await app.RunAsync();
