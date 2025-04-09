@@ -24,15 +24,7 @@ public static class DatabaseExtension
         {
             throw new InvalidOperationException("Database configuration is missing");
         }
-
-        // Get MongoDB password from environment
-        // var mongoDbPassword = Environment.GetEnvironmentVariable("MONGODB_PASSWORD") ??
-        //     throw new InvalidOperationException("MONGODB_PASSWORD environment variable is not set");
-
-        // Replace password placeholder in connection string
-        // var mongoConfig = dbSection.Databases["MongoDb"];
-        // mongoConfig.ConnectionString = mongoConfig.ConnectionString.Replace("__MONGODB_PASSWORD__", mongoDbPassword);
-        // Console.WriteLine("ConnectionString" + mongoConfig.ConnectionString);
+        
         services.AddOptions<DatabasesOptions>()
             .Configure(options =>
             {
@@ -44,8 +36,6 @@ public static class DatabaseExtension
         // MongoClient is thread-safe and meant to be used as a singleton
         services.AddSingleton(sp =>
         {
-            // var options = sp.GetRequiredService<IOptions<DatabasesOptions>>().Value;
-            // var config = options.Databases["MongoDb"];
             return new MongoClient(connectionString);
         });
 
