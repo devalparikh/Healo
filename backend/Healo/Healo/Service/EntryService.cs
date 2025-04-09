@@ -1,6 +1,7 @@
 using Healo.ErrorHandling;
 using Healo.Models;
 using Healo.Repository;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace Healo.Service;
 
@@ -15,22 +16,14 @@ public class EntryService
         _entryMapper = entryMapper;
     }
 
-    private static Error CreateError(ErrorType type, string message, Exception? ex = null)
-    {
-        var errors = new List<string> { message };
-        if (ex != null)
-        {
-            errors.Add($"Details: {ex.Message}");
-        }
-        return new Error(type, errors);
-    }
+    
 
     public async Task<ErrorOr<Entry>> CreateEntryAsync(Entry entry)
     {
         try
         {
             if (entry == null)
-                return CreateError(ErrorType.Validation, "Entry cannot be null");
+                return ErrorFactory.CreateError(ErrorType.Validation, "Entry cannot be null");
 
             var entity = _entryMapper.ToEntity(entry);
             var result = await _entryRepository.CreateAsync(entity);
@@ -38,7 +31,7 @@ public class EntryService
         }
         catch (Exception ex)
         {
-            return CreateError(ErrorType.Failure, "Failed to create entry", ex);
+            return ErrorFactory.CreateError(ErrorType.Failure, "Failed to create entry", ex);
         }
     }
 
@@ -47,17 +40,17 @@ public class EntryService
         try
         {
             if (id == Guid.Empty)
-                return CreateError(ErrorType.Validation, "Invalid entry ID");
+                return ErrorFactory.CreateError(ErrorType.Validation, "Invalid entry ID");
 
             var entity = await _entryRepository.GetByIdAsync(id);
             if (entity == null)
-                return CreateError(ErrorType.NotFound, $"Entry with ID {id} not found");
+                return ErrorFactory.CreateError(ErrorType.NotFound, $"Entry with ID {id} not found");
 
             return _entryMapper.ToModel(entity);
         }
         catch (Exception ex)
         {
-            return CreateError(ErrorType.Failure, "Failed to retrieve entry", ex);
+            return ErrorFactory.CreateError(ErrorType.Failure, "Failed to retrieve entry", ex);
         }
     }
 
@@ -71,7 +64,7 @@ public class EntryService
         }
         catch (Exception ex)
         {
-            return CreateError(ErrorType.Failure, "Failed to retrieve entries", ex);
+            return ErrorFactory.CreateError(ErrorType.Failure, "Failed to retrieve entries", ex);
         }
     }
 
@@ -80,20 +73,20 @@ public class EntryService
         try
         {
             if (id == Guid.Empty)
-                return CreateError(ErrorType.Validation, "Invalid entry ID");
+                return ErrorFactory.CreateError(ErrorType.Validation, "Invalid entry ID");
 
             if (entry == null)
-                return CreateError(ErrorType.Validation, "Entry cannot be null");
+                return ErrorFactory.CreateError(ErrorType.Validation, "Entry cannot be null");
 
             var entity = await _entryRepository.UpdateAsync(id, _entryMapper.ToEntity(entry));
             if (entity == null)
-                return CreateError(ErrorType.NotFound, $"Entry with ID {id} not found");
+                return ErrorFactory.CreateError(ErrorType.NotFound, $"Entry with ID {id} not found");
 
             return _entryMapper.ToModel(entity);
         }
         catch (Exception ex)
         {
-            return CreateError(ErrorType.Failure, "Failed to update entry", ex);
+            return ErrorFactory.CreateError(ErrorType.Failure, "Failed to update entry", ex);
         }
     }
 
@@ -102,17 +95,17 @@ public class EntryService
         try
         {
             if (id == Guid.Empty)
-                return CreateError(ErrorType.Validation, "Invalid entry ID");
+                return ErrorFactory.CreateError(ErrorType.Validation, "Invalid entry ID");
 
             var result = await _entryRepository.DeleteAsync(id);
             if (!result)
-                return CreateError(ErrorType.NotFound, $"Entry with ID {id} not found");
+                return ErrorFactory.CreateError(ErrorType.NotFound, $"Entry with ID {id} not found");
 
             return result;
         }
         catch (Exception ex)
         {
-            return CreateError(ErrorType.Failure, "Failed to delete entry", ex);
+            return ErrorFactory.CreateError(ErrorType.Failure, "Failed to delete entry", ex);
         }
     }
 }

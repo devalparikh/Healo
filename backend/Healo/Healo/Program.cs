@@ -9,12 +9,12 @@ var config = builder.Configuration;
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Replace environment variables in configuration
-config.GetSection("Databases:MongoDb:ConnectionString").Value =
-    config.GetSection("Databases:MongoDb:ConnectionString").Value?
-        .Replace("${MONGODB_PASSWORD}",
-            Environment.GetEnvironmentVariable("MONGODB_PASSWORD") ??
-            throw new InvalidOperationException("MONGODB_PASSWORD environment variable is not set"));
+// Add configuration sources
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
 
 // Database
 builder.Services.AddMongoDbConfiguration(config);
