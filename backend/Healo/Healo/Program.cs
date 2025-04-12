@@ -43,12 +43,21 @@ builder.Services.AddHostedService<DatabaseInitializer>();
 
 // Services
 builder.Services.AddScoped<EntryService>();
+builder.Services.AddScoped<JobGroupService>();
+builder.Services.AddScoped<EmployerTypeService>();
+builder.Services.AddScoped<LevelTypeService>();
 
 // Repositories
 builder.Services.AddScoped<IEntryRepository, EntryRepository>();
+builder.Services.AddScoped<IJobGroupRepository, JobGroupRepository>();
+builder.Services.AddScoped<IEmployerTypeRepository, EmployerTypeRepository>();
+builder.Services.AddScoped<ILevelTypeRepository, LevelTypeRepository>();
 
-// Adapters
+// Mappers
 builder.Services.AddSingleton<EntryMapper>();
+builder.Services.AddSingleton<JobGroupTypeMapper>();
+builder.Services.AddSingleton<EmployerTypeMapper>();
+builder.Services.AddSingleton<LevelTypeMapper>();
 
 var app = builder.Build();
 
