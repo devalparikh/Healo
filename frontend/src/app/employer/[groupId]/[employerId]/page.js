@@ -3,28 +3,43 @@
 import { useState } from "react";
 import { useEntries } from "../../../../hooks/useEntries";
 import {
-  employerTypesByGroup,
-  levelTypesByGroup,
-  healthcareGroups,
-} from "../../../../data/mockData";
+  useJobGroups,
+  useEmployerTypesByEnum,
+  useLevelTypesByEnum,
+} from "../../../../hooks/useTypes";
+import {
+  normalizeString,
+  camelCaseToSpace,
+} from "../../../../utils/stringUtils";
 
 export default function EmployerDetail({ params }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const { entries, isLoading, error } = useEntries();
 
-  const { groupId, employerId } = params;
+  // Decode the URL parameters
+  const groupName = decodeURIComponent(params.groupId).replace(/-/g, " ");
+  const employerName = decodeURIComponent(params.employerId).replace(/-/g, " ");
 
-  // Get the healthcare group and employer type names
-  const healthcareGroup = healthcareGroups.find((hg) => hg.id === groupId);
-  const employerType = employerTypesByGroup[groupId]?.find(
-    (et) => et.id === employerId
-  );
+  const {
+    entries,
+    isLoading: entriesLoading,
+    error: entriesError,
+  } = useEntries();
+  const { jobGroups, isLoading: groupsLoading } = useJobGroups();
+  const { employerTypes, isLoading: employerTypesLoading } =
+    useEmployerTypesByEnum(groupName);
+  const { levelTypes, isLoading: levelTypesLoading } =
+    useLevelTypesByEnum(groupName);
 
-  // Filter data for the specific group and employer
-  const employerData = entries.filter(
-    (item) => item.jobGroupId === groupId && item.employerTypeId === employerId
-  );
+  // Filter data using normalized string comparison with decoded names
+  const employerData = entries.filter((item) => {
+    const normalizedItemGroup = normalizeString(item.jobGroup);
+    const normalizedItemEmployer = normalizeString(item.employerType);
+    return (
+      normalizedItemGroup === normalizeString(groupName) &&
+      normalizedItemEmployer === normalizeString(employerName)
+    );
+  });
 
   const totalPages = Math.ceil(employerData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -33,13 +48,11 @@ export default function EmployerDetail({ params }) {
     startIndex + itemsPerPage
   );
 
-  // Get level name based on groupId and levelId
-  const getLevelName = (levelId) => {
-    return (
-      levelTypesByGroup[groupId]?.find((l) => l.id === levelId)?.name ||
-      item.level
-    );
-  };
+  const isLoading =
+    entriesLoading ||
+    groupsLoading ||
+    employerTypesLoading ||
+    levelTypesLoading;
 
   if (isLoading) {
     return (
@@ -49,10 +62,10 @@ export default function EmployerDetail({ params }) {
     );
   }
 
-  if (error) {
+  if (entriesError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-xl text-red-600">Error: {error}</div>
+        <div className="text-xl text-red-600">Error: {entriesError}</div>
       </div>
     );
   }
@@ -61,11 +74,9 @@ export default function EmployerDetail({ params }) {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-6">
-          <h2 className="text-lg font-medium text-gray-600">
-            {healthcareGroup?.name}
-          </h2>
+          <h2 className="text-lg font-medium text-gray-600">{groupName}</h2>
           <h1 className="text-3xl font-bold text-gray-900">
-            {employerType?.name} Data
+            {employerName} Data
           </h1>
         </div>
 
@@ -85,10 +96,10 @@ export default function EmployerDetail({ params }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {paginatedData.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
+              {paginatedData.map((item, index) => (
+                <tr key={index} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                    {item.level}
+                    {camelCaseToSpace(item.level)}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     ${item.salary.toLocaleString()}
