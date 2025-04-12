@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Healo.Configuration;
 using Healo.Configuration.Extensions;
 using Healo.Models;
@@ -6,6 +7,17 @@ using Healo.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
+
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins(builder.Configuration["AllowedOrigins"] ?? "http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 // Add logging first
 builder.Services.AddLogging();
@@ -18,7 +30,11 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 // Add services
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 
 // Database setup
@@ -35,6 +51,9 @@ builder.Services.AddScoped<IEntryRepository, EntryRepository>();
 builder.Services.AddSingleton<EntryMapper>();
 
 var app = builder.Build();
+
+// Use CORS
+app.UseCors();
 
 // Configure middleware
 app.MapControllers();

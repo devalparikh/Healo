@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace Healo.Models;
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 [Flags]
 public enum EmployerType
 {

@@ -1,13 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  mockData,
-  healthcareGroups,
-  employerTypesByGroup,
-  levelTypesByGroup,
-} from "../data/mockData";
+import { useEntries } from "../hooks/useEntries";
 import SalaryCard from "../components/SalaryCard";
 import WorkLifeBalanceBar from "../components/WorkLifeBalanceBar";
 import Sidebar from "../components/Sidebar";
@@ -16,40 +11,107 @@ import JobPostings from "../components/JobPostings";
 export default function App() {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState(healthcareGroups[0].id);
+  const { entries, isLoading, error } = useEntries();
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
-  // Get current employer types based on selected group
-  const currentEmployerTypes = employerTypesByGroup[selectedGroup] || [];
-  const currentLevelTypes = levelTypesByGroup[selectedGroup] || [];
+  // Compute healthcare groups from entries
+  const healthcareGroups = useMemo(() => {
+    if (!entries) return [];
+    return Array.from(new Set(entries.map((entry) => entry.jobGroupId))).map(
+      (id) => ({
+        id,
+        name: entries.find((e) => e.jobGroupId === id)?.jobGroup,
+      })
+    );
+  }, [entries]);
+
+  // Set initial selected group when data loads
+  useEffect(() => {
+    if (healthcareGroups.length > 0 && !selectedGroup) {
+      setSelectedGroup(healthcareGroups[0].id);
+    }
+  }, [healthcareGroups, selectedGroup]);
+
+  // Compute employer types and levels for the selected group
+  const currentEmployerTypes = useMemo(() => {
+    if (!entries) return [];
+    return Array.from(
+      new Set(
+        entries
+          .filter((e) => e.jobGroupId === selectedGroup)
+          .map((e) => e.employerTypeId)
+      )
+    ).map((id) => ({
+      id,
+      name: entries.find((e) => e.employerTypeId === id)?.employerType,
+    }));
+  }, [entries, selectedGroup]);
+
+  const currentLevelTypes = useMemo(() => {
+    if (!entries) return [];
+    return Array.from(
+      new Set(
+        entries
+          .filter((e) => e.jobGroupId === selectedGroup)
+          .map((e) => e.levelId)
+      )
+    ).map((id) => ({
+      id,
+      name: entries.find((e) => e.levelId === id)?.level,
+    }));
+  }, [entries, selectedGroup]);
 
   // Calculate average work-life balance score for each employer type
   const getAverageScore = (employerTypeId) => {
-    const scores = mockData
-      .filter(
-        (item) =>
-          item.groupId === selectedGroup &&
-          item.employerTypeId === employerTypeId
-      )
-      .map((item) => item.workLifeBalanceScore);
-    return scores.length > 0
-      ? scores.reduce((a, b) => a + b, 0) / scores.length
-      : 0;
+    if (!entries) return 0;
+
+    const relevantEntries = entries.filter(
+      (item) =>
+        item.jobGroupId === selectedGroup &&
+        item.employerTypeId === employerTypeId
+    );
+
+    if (relevantEntries.length === 0) return 0;
+
+    const sum = relevantEntries.reduce(
+      (acc, item) => acc + item.workLifeBalanceScore,
+      0
+    );
+    return sum / relevantEntries.length;
   };
 
   // Get average salary for a specific employer type and level
   const getAverageSalary = (employerTypeId, levelId) => {
-    const salaries = mockData
-      .filter(
-        (item) =>
-          item.groupId === selectedGroup &&
-          item.employerTypeId === employerTypeId &&
-          item.levelId === levelId
-      )
-      .map((item) => item.salary);
-    return salaries.length > 0
-      ? salaries.reduce((a, b) => a + b, 0) / salaries.length
-      : 0;
+    if (!entries) return 0;
+
+    const relevantEntries = entries.filter(
+      (item) =>
+        item.jobGroupId === selectedGroup &&
+        item.employerTypeId === employerTypeId &&
+        item.levelId === levelId
+    );
+
+    if (relevantEntries.length === 0) return 0;
+
+    const sum = relevantEntries.reduce((acc, item) => acc + item.salary, 0);
+    return Math.round(sum / relevantEntries.length);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-2xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-2xl text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">

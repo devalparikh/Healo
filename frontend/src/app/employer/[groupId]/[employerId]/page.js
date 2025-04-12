@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useEntries } from "../../../../hooks/useEntries";
 import {
-  mockData,
   employerTypesByGroup,
   levelTypesByGroup,
   healthcareGroups,
@@ -11,6 +11,7 @@ import {
 export default function EmployerDetail({ params }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const { entries, isLoading, error } = useEntries();
 
   const { groupId, employerId } = params;
 
@@ -21,8 +22,8 @@ export default function EmployerDetail({ params }) {
   );
 
   // Filter data for the specific group and employer
-  const employerData = mockData.filter(
-    (item) => item.groupId === groupId && item.employerTypeId === employerId
+  const employerData = entries.filter(
+    (item) => item.jobGroupId === groupId && item.employerTypeId === employerId
   );
 
   const totalPages = Math.ceil(employerData.length / itemsPerPage);
@@ -35,9 +36,26 @@ export default function EmployerDetail({ params }) {
   // Get level name based on groupId and levelId
   const getLevelName = (levelId) => {
     return (
-      levelTypesByGroup[groupId]?.find((l) => l.id === levelId)?.name || ""
+      levelTypesByGroup[groupId]?.find((l) => l.id === levelId)?.name ||
+      item.level
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-xl text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -53,12 +71,24 @@ export default function EmployerDetail({ params }) {
 
         <div className="bg-white overflow-hidden shadow-lg rounded-lg">
           <table className="min-w-full divide-y divide-gray-200">
-            {/* ...existing thead... */}
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Level
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Salary
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Work/Life Balance
+                </th>
+              </tr>
+            </thead>
             <tbody className="divide-y divide-gray-200">
-              {paginatedData.map((item, index) => (
-                <tr key={item.id || index} className="hover:bg-gray-50">
+              {paginatedData.map((item) => (
+                <tr key={item.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                    {getLevelName(item.levelId)}
+                    {item.level}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     ${item.salary.toLocaleString()}
@@ -72,7 +102,27 @@ export default function EmployerDetail({ params }) {
           </table>
         </div>
 
-        {/* ...existing pagination code... */}
+        {totalPages > 1 && (
+          <div className="mt-4 flex justify-center">
+            <nav className="flex items-center space-x-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded ${
+                      currentPage === page
+                        ? "bg-indigo-600 text-white"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+            </nav>
+          </div>
+        )}
       </div>
     </div>
   );
